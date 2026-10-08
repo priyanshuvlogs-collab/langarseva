@@ -1,0 +1,103 @@
+# Codemagic builds iOS (no Mac needed) and can also build Android.
+# Setup once in the Codemagic UI:
+#   1. Add this repo, select "codemagic.yaml" workflows.
+#   2. Teams > Integrations > App Store Connect: upload an API key (Issuer ID, Key ID, .p8).
+#      Name the integration "langarseva_asc".
+#   3. Environment variable groups:
+#        langarseva_secrets: SUPABASE_URL, SUPABASE_ANON_KEY, GOOGLE_WEB_CLIENT_ID,
+#                            GOOGLE_IOS_CLIENT_ID, MAPS_API_KEY_IOS, MAPS_API_KEY_ANDROID
+#        android_signing:    CM_KEYSTORE (base64), CM_KEYSTORE_PASSWORD, CM_KEY_ALIAS, CM_KEY_PASSWORD
+workflows:
+  ios-testflight:
+    name: iOS → TestFlight
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: langarseva_asc
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      groups:
+        - langarseva_secrets
+      vars:
+        BUNDLE_ID: com.langarseva.app
+        APP_STORE_APPLE_ID: "0000000000"   # <- replace with the App's Apple ID from App Store Connect
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.langarseva.app
+    triggering:
+      events: [tag]
+      tag_patterns:
+        - pattern: 'v*'
+    scripts:
+      - name: Set up code signing
+        script: xcode-project use-profiles
+      - name: Get packages
+        script: flutter pub get && flutter gen-l10n
+      - name: Analyze & test
+        script: flutter analyze --no-fatal-infos && flutter test
+      - name: Inject Google Maps key into Info.plist
+        script: |
+          /usr/libexec/PlistBuddy -c "Set :GMSApiKey $MAPS_API_KEY_IOS" ios/Runner/Info.plist
+      - name: Install pods
+        script: cd ios && pod install
+      - name: Build IPA
+        script: |
+          BUILD_NUMBER=$(($(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" || echo 0) + 1))
+          flutter build ipa --release \
+            --build-number=$BUILD_NUMBER \
+            --export-options-plist=/Users/builder/export_options.plist \
+            --dart-define=SUPABASE_URL=$SUPABASE_URL \
+            --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY \
+            --dart-define=GOOGLE_WEB_CLIENT_ID=$GOOGLE_WEB_CLIENT_ID \
+            --dart-define=GOOGLE_IOS_CLIENT_ID=$GOOGLE_IOS_CLIENT_ID
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        beta_groups:
+          - Internal testers
+        submit_to_app_store: false
+
+  android-play:
+    name: Android → Play internal
+    max_build_duration: 60
+    instance_type: linux_x2
+    environment:
+      flutter: stable
+      java: 17
+      groups:
+        - langarseva_secrets
+        - android_signing
+    triggering:
+      events: [tag]
+      tag_patterns:
+        - pattern: 'v*'
+    scripts:
+      - name: Restore keystore
+        script: |
+          echo $CM_KEYSTORE | base64 --decode > android/app/upload-keystore.jks
+          cat > android/key.properties <<EOF
+          storePassword=$CM_KEYSTORE_PASSWORD
+          keyPassword=$CM_KEY_PASSWORD
+          keyAlias=$CM_KEY_ALIAS
+          storeFile=upload-keystore.jks
+          EOF
+      - name: Build AAB
+        script: |
+          flutter pub get && flutter gen-l10n
+          export MAPS_API_KEY=$MAPS_API_KEY_ANDROID
+          flutter build appbundle --release \
+            --dart-define=SUPABASE_URL=$SUPABASE_URL \
+            --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY \
+            --dart-define=GOOGLE_WEB_CLIENT_ID=$GOOGLE_WEB_CLIENT_ID
+    artifacts:
+      - build/app/outputs/bundle/release/*.aab
+    publishing:
+      google_play:
+        credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+        track: internal
