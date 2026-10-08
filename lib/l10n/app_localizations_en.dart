@@ -454,4 +454,20 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get locationTimeout =>
       'Couldn\'t get your location. Showing results for Delhi.';
+
+  @override
+  String get sevaSlotFullMsg => 'Sorry, this seva slot just filled up.';
+
+  @override
+  String get sevaSlotEndedMsg => 'This seva slot has already ended.';
+
+  @override
+  String get invalidUpi => 'Enter a valid UPI ID, like name@bank';
+
+  @override
+  String get invalidUrl => 'Enter a full link starting with https://';
+
+  @override
+  String get invalidPhoto =>
+      'A photo could not be attached. Please pick it again.';
 }

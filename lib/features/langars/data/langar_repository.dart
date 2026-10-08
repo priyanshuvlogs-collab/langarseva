@@ -84,28 +84,25 @@ class LangarRepository {
     List<String> photos = const [],
     List<LangarTiming> timings = const [],
   }) async {
-    final row = await _db
-        .from('langars')
-        .insert({
-          'name': name,
-          'description': _n(description),
-          'lat': lat,
-          'lng': lng,
-          'address': _n(address),
-          'city': _n(city),
-          'state': _n(state),
-          'contact_phone': _n(contactPhone),
-          'donate_upi_id': _n(donateUpiId),
-          'donate_url': _n(donateUrl),
-          'photos': photos,
-        })
-        .select('id')
-        .single();
-    final id = row['id'] as String;
-    if (timings.isNotEmpty) {
-      await _db.from('langar_timings').insert(timings.map((t) => t.toJson(id)).toList());
-    }
-    return id;
+    // One RPC = one transaction: the langar and its timings are saved together
+    // or not at all, so a retry after a failure cannot leave a duplicate.
+    final id = await _db.rpc('submit_langar', params: {
+      'p': {
+        'name': name.trim(),
+        'description': _n(description),
+        'lat': lat,
+        'lng': lng,
+        'address': _n(address),
+        'city': _n(city),
+        'state': _n(state),
+        'contact_phone': _n(contactPhone),
+        'donate_upi_id': _n(donateUpiId),
+        'donate_url': _n(donateUrl),
+        'photos': photos,
+      },
+      'p_timings': timings.map((t) => t.toJson('')..remove('langar_id')).toList(),
+    });
+    return id as String;
   }
 
   Future<void> replaceTimings(String langarId, List<LangarTiming> timings) async {

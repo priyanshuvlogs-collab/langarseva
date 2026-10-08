@@ -22,15 +22,17 @@ class AdminScreen extends ConsumerWidget {
         context: context,
         builder: (ctx) => AlertDialog(
           title: Text(l.reject),
-          content: TextField(controller: ctrl, decoration: InputDecoration(labelText: l.rejectReason), maxLines: 2),
+          content: TextField(controller: ctrl, decoration: InputDecoration(labelText: l.rejectReason), maxLines: 2, maxLength: 500),
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l.cancel)),
             FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l.reject)),
           ],
         ),
       );
+      final text = ctrl.text.trim();
+      ctrl.dispose();
       if (ok != true) return;
-      reason = ctrl.text.trim().isEmpty ? null : ctrl.text.trim();
+      reason = text.isEmpty ? null : text;
     }
     try {
       await ref.read(langarRepositoryProvider).setStatus(x.id, status, reason: reason);

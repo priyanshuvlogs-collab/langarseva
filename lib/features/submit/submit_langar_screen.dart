@@ -6,6 +6,7 @@ import 'package:geocoding/geocoding.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
 
 import '../../core/location_service.dart';
 import '../../core/supabase_client.dart';
@@ -35,6 +36,8 @@ class _SubmitLangarScreenState extends ConsumerState<SubmitLangarScreen> {
   LatLng? _point;
   List<LangarTiming> _timings = defaultTimings();
   final List<XFile> _photos = [];
+  // One read per picked file; re-reading on every rebuild made previews flicker.
+  final Map<XFile, Future<Uint8List>> _previews = {};
   bool _busy = false;
 
   @override
@@ -68,7 +71,12 @@ class _SubmitLangarScreenState extends ConsumerState<SubmitLangarScreen> {
   Future<void> _addPhotos() async {
     final picked = await ImagePicker().pickMultiImage(imageQuality: 75, maxWidth: 1600);
     if (picked.isEmpty) return;
-    setState(() => _photos.addAll(picked.take(5 - _photos.length)));
+    setState(() {
+      for (final x in picked.take(5 - _photos.length)) {
+        _photos.add(x);
+        _previews[x] = x.readAsBytes();
+      }
+    });
   }
 
   Future<void> _submit() async {
@@ -117,6 +125,16 @@ class _SubmitLangarScreenState extends ConsumerState<SubmitLangarScreen> {
         ),
       );
       if (mounted) context.go('/');
+    } on PostgrestException catch (e) {
+      if (mounted) {
+        showSnack(context, switch (e.message) {
+          final m when m.contains('langars_upi_fmt') => l.invalidUpi,
+          final m when m.contains('langars_url_fmt') => l.invalidUrl,
+          final m when m.contains('langars_phone_fmt') => l.invalidPhone,
+          'invalid_photo_url' => l.invalidPhoto,
+          _ => l.errorGeneric,
+        });
+      }
     } catch (_) {
       if (mounted) showSnack(context, l.errorGeneric);
     } finally {
@@ -129,6 +147,16 @@ class _SubmitLangarScreenState extends ConsumerState<SubmitLangarScreen> {
     final l = AppLocalizations.of(context);
     final theme = Theme.of(context);
     String? req(String? v) => (v == null || v.trim().length < 2) ? l.required : null;
+    // Same rules as the database constraints in 0002_hardening.sql.
+    String? phone(String? v) =>
+        (v == null || v.trim().isEmpty || RegExp(r'^\+?[0-9][0-9 ()-]{5,19}$').hasMatch(v.trim())) ? null : l.invalidPhone;
+    String? upi(String? v) =>
+        (v == null || v.trim().isEmpty || RegExp(r'^[A-Za-z0-9._-]{2,255}@[A-Za-z0-9]{2,64}$').hasMatch(v.trim())) ? null : l.invalidUpi;
+    String? url(String? v) {
+      if (v == null || v.trim().isEmpty) return null;
+      final u = Uri.tryParse(v.trim());
+      return (u != null && u.scheme == 'https' && u.host.contains('.') && v.trim().length <= 500) ? null : l.invalidUrl;
+    }
 
     return Scaffold(
       appBar: AppBar(title: Text(l.addLangar)),
@@ -137,9 +165,9 @@ class _SubmitLangarScreenState extends ConsumerState<SubmitLangarScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            TextFormField(controller: _name, decoration: InputDecoration(labelText: l.langarName), validator: req, textCapitalization: TextCapitalization.words),
+            TextFormField(controller: _name, decoration: InputDecoration(labelText: l.langarName), validator: req, maxLength: 120, textCapitalization: TextCapitalization.words),
             const SizedBox(height: 12),
-            TextFormField(controller: _desc, decoration: InputDecoration(labelText: l.description), maxLines: 3),
+            TextFormField(controller: _desc, decoration: InputDecoration(labelText: l.description), maxLines: 3, maxLength: 2000),
             const SizedBox(height: 20),
             // Location
             Card(
@@ -152,12 +180,12 @@ class _SubmitLangarScreenState extends ConsumerState<SubmitLangarScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            TextFormField(controller: _address, decoration: InputDecoration(labelText: l.address), validator: req),
+            TextFormField(controller: _address, decoration: InputDecoration(labelText: l.address), validator: req, maxLength: 300),
             const SizedBox(height: 12),
             Row(children: [
-              Expanded(child: TextFormField(controller: _city, decoration: InputDecoration(labelText: l.city), validator: req)),
+              Expanded(child: TextFormField(controller: _city, decoration: InputDecoration(labelText: l.city), validator: req, maxLength: 100)),
               const SizedBox(width: 12),
-              Expanded(child: TextFormField(controller: _state, decoration: InputDecoration(labelText: l.state))),
+              Expanded(child: TextFormField(controller: _state, decoration: InputDecoration(labelText: l.state), maxLength: 100)),
             ]),
             const SizedBox(height: 20),
             Text(l.timings, style: theme.textTheme.titleMedium),
@@ -177,7 +205,7 @@ class _SubmitLangarScreenState extends ConsumerState<SubmitLangarScreen> {
                       child: Stack(
                         children: [
                           FutureBuilder<Uint8List>(
-                            future: p.readAsBytes(),
+                            future: _previews[p] ??= p.readAsBytes(),
                             builder: (_, s) => ClipRRect(
                               borderRadius: BorderRadius.circular(12),
                               child: s.hasData
@@ -191,7 +219,7 @@ class _SubmitLangarScreenState extends ConsumerState<SubmitLangarScreen> {
                             child: IconButton.filledTonal(
                               visualDensity: VisualDensity.compact,
                               icon: const Icon(Icons.close, size: 16),
-                              onPressed: () => setState(() => _photos.removeAt(i)),
+                              onPressed: _busy ? null : () => setState(() => _previews.remove(_photos.removeAt(i))),
                             ),
                           ),
                         ],
@@ -211,11 +239,11 @@ class _SubmitLangarScreenState extends ConsumerState<SubmitLangarScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            TextFormField(controller: _phone, decoration: InputDecoration(labelText: l.contactPhone), keyboardType: TextInputType.phone),
+            TextFormField(controller: _phone, decoration: InputDecoration(labelText: l.contactPhone), keyboardType: TextInputType.phone, validator: phone),
             const SizedBox(height: 12),
-            TextFormField(controller: _upi, decoration: InputDecoration(labelText: l.donateUpiOptional, hintText: 'name@bank')),
+            TextFormField(controller: _upi, decoration: InputDecoration(labelText: l.donateUpiOptional, hintText: 'name@bank'), validator: upi),
             const SizedBox(height: 12),
-            TextFormField(controller: _url, decoration: InputDecoration(labelText: l.donateUrlOptional), keyboardType: TextInputType.url),
+            TextFormField(controller: _url, decoration: InputDecoration(labelText: l.donateUrlOptional, hintText: 'https://'), keyboardType: TextInputType.url, validator: url),
             const SizedBox(height: 24),
             FilledButton.icon(
               onPressed: _busy ? null : _submit,

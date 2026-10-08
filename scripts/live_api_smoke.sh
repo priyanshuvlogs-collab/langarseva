@@ -70,4 +70,19 @@ code=$(curl "${H[@]}" -o /dev/null -w '%{http_code}' -X POST "$U/rest/v1/rpc/lan
 [ "$code" != 200 ] || fail "langars_guard callable via RPC"
 ok "trigger function not callable via RPC ($code)"
 
+# 14. submit_langar is for signed-in users only
+code=$(curl "${H[@]}" -o /dev/null -w '%{http_code}' -X POST "$U/rest/v1/rpc/submit_langar" -d '{"p":{"name":"smoke","lat":1,"lng":1}}')
+[ "$code" = 401 ] || [ "$code" = 403 ] || fail "anon submit_langar returned HTTP $code"
+ok "submit_langar rejects anon ($code)"
+
+# 15. nearby_langars clamps an abusive limit/radius instead of scanning everything
+n3=$(curl "${H[@]}" -X POST "$U/rest/v1/rpc/nearby_langars" -d '{"p_lat":28.6315,"p_lng":77.2167,"p_radius_m":1e12,"p_limit":1000000}' | jq 'length')
+[ "$n3" -le 200 ] || fail "nearby_langars returned $n3 rows for a huge limit"
+ok "nearby_langars clamps radius/limit ($n3 rows)"
+
+# 16. the seva capacity trigger is not exposed as RPC
+code=$(curl "${H[@]}" -o /dev/null -w '%{http_code}' -X POST "$U/rest/v1/rpc/seva_signup_guard" -d '{}')
+[ "$code" != 200 ] || fail "seva_signup_guard callable via RPC"
+ok "seva_signup_guard not callable via RPC ($code)"
+
 echo "ALL $pass CHECKS PASSED"

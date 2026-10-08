@@ -455,4 +455,19 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get locationTimeout =>
       'आपकी लोकेशन नहीं मिल पाई। दिल्ली के नतीजे दिखा रहे हैं।';
+
+  @override
+  String get sevaSlotFullMsg => 'माफ़ कीजिए, यह सेवा स्लॉट अभी भर गया।';
+
+  @override
+  String get sevaSlotEndedMsg => 'यह सेवा स्लॉट समाप्त हो चुका है।';
+
+  @override
+  String get invalidUpi => 'सही UPI ID डालें, जैसे name@bank';
+
+  @override
+  String get invalidUrl => 'https:// से शुरू होने वाला पूरा लिंक डालें';
+
+  @override
+  String get invalidPhoto => 'एक फ़ोटो नहीं जुड़ सकी। कृपया फिर से चुनें।';
 }

@@ -100,16 +100,18 @@ class _Body extends ConsumerWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(l.report),
-        content: TextField(controller: ctrl, maxLines: 3, decoration: InputDecoration(hintText: l.reportReasonHint)),
+        content: TextField(controller: ctrl, maxLines: 3, maxLength: 1000, decoration: InputDecoration(hintText: l.reportReasonHint)),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l.cancel)),
           FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l.report)),
         ],
       ),
     );
-    if (ok == true && ctrl.text.trim().isNotEmpty) {
+    final reason = ctrl.text.trim();
+    ctrl.dispose();
+    if (ok == true && reason.isNotEmpty) {
       try {
-        await ref.read(langarRepositoryProvider).report(user.id, langar.id, ctrl.text.trim());
+        await ref.read(langarRepositoryProvider).report(user.id, langar.id, reason);
         if (context.mounted) showSnack(context, l.reportSent);
       } catch (_) {
         if (context.mounted) showSnack(context, l.errorGeneric);

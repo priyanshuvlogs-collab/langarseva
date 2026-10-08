@@ -38,9 +38,18 @@ void main() {
       expect(isOpenAt([const LangarTiming(dayOfWeek: wed, is24h: true)], wedNoonIst), isTrue);
       expect(isOpenAt([const LangarTiming(dayOfWeek: wed, is24h: true)], wedMidnightIst), isTrue);
     });
-    test('overnight window wraps past midnight', () {
-      final t = [LangarTiming(dayOfWeek: wed, opensAt: const TimeOfDay(hour: 20, minute: 0), closesAt: const TimeOfDay(hour: 2, minute: 0))];
-      expect(isOpenAt(t, wedMidnightIst), isTrue);
+    test('overnight row covers its own evening and the next early morning', () {
+      // Tuesday 20:00 - 02:00
+      final t = [LangarTiming(dayOfWeek: 2, opensAt: const TimeOfDay(hour: 20, minute: 0), closesAt: const TimeOfDay(hour: 2, minute: 0))];
+      expect(isOpenAt(t, DateTime.utc(2026, 10, 6, 15, 30)), isTrue, reason: 'Tue 21:00 IST');
+      expect(isOpenAt(t, wedMidnightIst), isTrue, reason: 'Wed 00:00 IST, tail of Tue night');
+      expect(isOpenAt(t, DateTime.utc(2026, 10, 6, 19, 30)), isTrue, reason: 'Wed 01:00 IST');
+      expect(isOpenAt(t, DateTime.utc(2026, 10, 6, 21, 30)), isFalse, reason: 'Wed 03:00 IST');
+      expect(isOpenAt(t, DateTime.utc(2026, 10, 5, 19, 30)), isFalse, reason: 'Tue 01:00 IST belongs to Monday night');
+      expect(isOpenAt(t, wedNoonIst), isFalse);
+    });
+    test('a 24h row does not spill into the next day', () {
+      final t = [const LangarTiming(dayOfWeek: 2, is24h: true)];
       expect(isOpenAt(t, wedNoonIst), isFalse);
     });
     test('two sittings in one day', () {

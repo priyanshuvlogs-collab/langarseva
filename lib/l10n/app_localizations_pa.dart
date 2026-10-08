@@ -456,4 +456,19 @@ class AppLocalizationsPa extends AppLocalizations {
   @override
   String get locationTimeout =>
       'ਤੁਹਾਡੀ ਲੋਕੇਸ਼ਨ ਨਹੀਂ ਮਿਲ ਸਕੀ। ਦਿੱਲੀ ਦੇ ਨਤੀਜੇ ਦਿਖਾ ਰਹੇ ਹਾਂ।';
+
+  @override
+  String get sevaSlotFullMsg => 'ਮਾਫ਼ ਕਰਨਾ, ਇਹ ਸੇਵਾ ਸਲਾਟ ਹੁਣੇ ਭਰ ਗਿਆ।';
+
+  @override
+  String get sevaSlotEndedMsg => 'ਇਹ ਸੇਵਾ ਸਲਾਟ ਖ਼ਤਮ ਹੋ ਚੁੱਕਾ ਹੈ।';
+
+  @override
+  String get invalidUpi => 'ਸਹੀ UPI ID ਪਾਓ, ਜਿਵੇਂ name@bank';
+
+  @override
+  String get invalidUrl => 'https:// ਨਾਲ ਸ਼ੁਰੂ ਹੋਣ ਵਾਲਾ ਪੂਰਾ ਲਿੰਕ ਪਾਓ';
+
+  @override
+  String get invalidPhoto => 'ਇੱਕ ਫ਼ੋਟੋ ਨਹੀਂ ਜੁੜ ਸਕੀ। ਕਿਰਪਾ ਕਰਕੇ ਮੁੜ ਚੁਣੋ।';
 }
