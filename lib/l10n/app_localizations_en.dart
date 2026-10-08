@@ -446,4 +446,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get accountDeleted => 'Your account has been deleted.';
+
+  @override
+  String get locationServiceOff =>
+      'Location services are turned off. Showing results for Delhi.';
+
+  @override
+  String get locationTimeout =>
+      'Couldn\'t get your location. Showing results for Delhi.';
 }

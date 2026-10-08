@@ -156,13 +156,7 @@ class SevaSlot {
   bool get isFull => spotsLeft == 0;
 
   factory SevaSlot.fromJson(Map<String, dynamic> j) {
-    final counts = j['seva_slot_counts'];
-    int joined = 0;
-    if (counts is Map) {
-      joined = (counts['joined'] as num?)?.toInt() ?? 0;
-    } else if (counts is List && counts.isNotEmpty) {
-      joined = ((counts.first as Map)['joined'] as num?)?.toInt() ?? 0;
-    }
+    final joined = (j['joined'] as num?)?.toInt() ?? 0;
     final langar = j['langars'];
     return SevaSlot(
       id: j['id'] as String,

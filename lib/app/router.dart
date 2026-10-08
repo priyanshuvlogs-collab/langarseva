@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -15,11 +18,31 @@ import '../features/submit/submit_langar_screen.dart';
 /// Routes that need a signed-in user. Visiting them signed out redirects to /login?next=...
 const _authRoutes = {'/add', '/profile/submissions', '/profile/seva', '/profile/favourites', '/admin'};
 
+/// Turns a stream (the Supabase auth state stream) into a Listenable so GoRouter
+/// re-evaluates `redirect` without being rebuilt.
+class _StreamListenable extends ChangeNotifier {
+  _StreamListenable(Stream<dynamic> stream) {
+    _sub = stream.listen((_) => notifyListeners());
+  }
+  late final StreamSubscription<dynamic> _sub;
+  @override
+  void dispose() {
+    _sub.cancel();
+    super.dispose();
+  }
+}
+
+/// Built once per app lifetime. Auth changes only trigger `redirect`, never a new router,
+/// so navigation state (and `?next=`) survives sign-in and sign-out.
 final routerProvider = Provider<GoRouter>((ref) {
-  final signedIn = ref.watch(isSignedInProvider);
-  return GoRouter(
+  final auth = ref.watch(supabaseProvider).auth;
+  final refresh = _StreamListenable(auth.onAuthStateChange);
+  ref.onDispose(refresh.dispose);
+  final router = GoRouter(
     initialLocation: '/',
+    refreshListenable: refresh,
     redirect: (context, state) {
+      final signedIn = auth.currentUser != null;
       final path = state.uri.path;
       if (!signedIn && _authRoutes.contains(path)) {
         return '/login?next=${Uri.encodeComponent(state.uri.toString())}';
@@ -43,4 +66,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/admin', builder: (_, __) => const AdminScreen()),
     ],
   );
+  ref.onDispose(router.dispose);
+  return router;
 });
