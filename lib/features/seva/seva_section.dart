@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
 
 import '../../core/supabase_client.dart';
 import '../../l10n/app_localizations.dart';
@@ -48,13 +49,26 @@ class SevaSection extends ConsumerWidget {
   }
 }
 
-class SevaSlotCard extends ConsumerWidget {
+class SevaSlotCard extends ConsumerStatefulWidget {
   const SevaSlotCard({super.key, required this.slot, required this.joined, this.showLangar = false});
   final SevaSlot slot;
   final bool joined;
   final bool showLangar;
 
+  @override
+  ConsumerState<SevaSlotCard> createState() => _SevaSlotCardState();
+}
+
+class _SevaSlotCardState extends ConsumerState<SevaSlotCard> {
+  /// Blocks repeat taps while a join/leave request is in flight.
+  bool _busy = false;
+
+  SevaSlot get slot => widget.slot;
+  bool get joined => widget.joined;
+  bool get showLangar => widget.showLangar;
+
   Future<void> _toggle(BuildContext context, WidgetRef ref) async {
+    if (_busy) return;
     final user = ref.read(currentUserProvider);
     if (user == null) {
       context.push('/login?next=${Uri.encodeComponent('/langar/${slot.langarId}')}');
@@ -62,6 +76,7 @@ class SevaSlotCard extends ConsumerWidget {
     }
     final l = AppLocalizations.of(context);
     final repo = ref.read(sevaRepositoryProvider);
+    setState(() => _busy = true);
     try {
       if (joined) {
         await repo.leave(user.id, slot.id);
@@ -69,16 +84,27 @@ class SevaSlotCard extends ConsumerWidget {
         await repo.join(user.id, slot.id);
         if (context.mounted) showSnack(context, l.sevaJoined);
       }
+    } on PostgrestException catch (e) {
+      if (context.mounted) {
+        showSnack(context, switch (e.message) {
+          'slot_full' => l.sevaSlotFullMsg,
+          'slot_ended' => l.sevaSlotEndedMsg,
+          _ => l.errorGeneric,
+        });
+      }
+    } catch (_) {
+      if (context.mounted) showSnack(context, l.errorGeneric);
+    } finally {
+      // Refresh in every case so a full/ended slot shows its real state.
       ref.invalidate(mySlotIdsProvider);
       ref.invalidate(mySevaProvider);
       ref.invalidate(sevaSlotsProvider(slot.langarId));
-    } catch (_) {
-      if (context.mounted) showSnack(context, l.errorGeneric);
+      if (mounted) setState(() => _busy = false);
     }
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final locale = Localizations.localeOf(context).toString();
@@ -110,9 +136,9 @@ class SevaSlotCard extends ConsumerWidget {
             ),
             const SizedBox(width: 8),
             joined
-                ? OutlinedButton(onPressed: () => _toggle(context, ref), child: Text(l.sevaLeave))
+                ? OutlinedButton(onPressed: _busy ? null : () => _toggle(context, ref), child: Text(l.sevaLeave))
                 : FilledButton.tonal(
-                    onPressed: slot.isFull ? null : () => _toggle(context, ref),
+                    onPressed: slot.isFull || _busy ? null : () => _toggle(context, ref),
                     child: Text(slot.isFull ? l.sevaFull : l.sevaJoin),
                   ),
           ],
@@ -149,7 +175,7 @@ Future<void> showCreateSlotDialog(BuildContext context, WidgetRef ref, String la
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextField(controller: title, decoration: InputDecoration(labelText: l.slotTitle), onChanged: (_) => setState(() {})),
+                TextField(controller: title, maxLength: 120, decoration: InputDecoration(labelText: l.slotTitle), onChanged: (_) => setState(() {})),
                 const SizedBox(height: 12),
                 ListTile(
                   contentPadding: EdgeInsets.zero,
@@ -171,20 +197,21 @@ Future<void> showCreateSlotDialog(BuildContext context, WidgetRef ref, String la
                     if (v != null && v.isAfter(start)) setState(() => end = v);
                   },
                 ),
-                TextField(controller: capacity, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: l.capacity)),
+                TextField(controller: capacity, keyboardType: TextInputType.number, maxLength: 4, decoration: InputDecoration(labelText: l.capacity, helperText: '1 – 1000')),
               ],
             ),
           ),
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l.cancel)),
-            FilledButton(onPressed: title.text.trim().isEmpty ? null : () => Navigator.pop(ctx, true), child: Text(l.save)),
+            FilledButton(onPressed: title.text.trim().length < 2 ? null : () => Navigator.pop(ctx, true), child: Text(l.save)),
           ],
         );
       },
     ),
   );
   final titleText = title.text.trim();
-  final capacityValue = int.tryParse(capacity.text) ?? 10;
+  // The database requires 1..1000; 0, negatives or 5000 used to fail with a generic error.
+  final capacityValue = (int.tryParse(capacity.text.trim()) ?? 10).clamp(1, 1000);
   title.dispose();
   capacity.dispose();
   if (ok != true) return;

@@ -181,5 +181,10 @@
   "manageSeva": "Manage seva slots",
   "accountDeleted": "Your account has been deleted.",
   "locationServiceOff": "Location services are turned off. Showing results for Delhi.",
-  "locationTimeout": "Couldn't get your location. Showing results for Delhi."
+  "locationTimeout": "Couldn't get your location. Showing results for Delhi.",
+  "sevaSlotFullMsg": "Sorry, this seva slot just filled up.",
+  "sevaSlotEndedMsg": "This seva slot has already ended.",
+  "invalidUpi": "Enter a valid UPI ID, like name@bank",
+  "invalidUrl": "Enter a full link starting with https://",
+  "invalidPhoto": "A photo could not be attached. Please pick it again."
 }

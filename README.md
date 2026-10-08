@@ -78,6 +78,8 @@ Checks: `flutter analyze && flutter test`.
       `PLAY_SERVICE_ACCOUNT_JSON`; Variables: `RELEASE_SIGNING=true`.
 - [ ] GitHub → Settings → Pages → deploy from `docs/` so the privacy policy URL works.
 - [ ] Play Console: create app, fill listing from `store/play/`, Data safety, content rating, set up **Play App Signing**.
+      Phone screenshots (1080×1920, en/hi/pa) are in `store/screenshots/`. Regenerate after UI changes with
+      `flutter test --update-goldens tool/store_screenshots_test.dart --dart-define=NOTO_DIR=<dir with NotoSansDevanagari.ttf + NotoSansGurmukhi.ttf>`.
 - [ ] App Store Connect: register bundle id `com.langarseva.app`, create app, fill listing from `store/appstore/`, create an API key.
 - [ ] Codemagic: add repo, App Store Connect integration `langarseva_asc`, env groups listed at the top of `codemagic.yaml`, set `APP_STORE_APPLE_ID`.
 

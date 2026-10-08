@@ -921,6 +921,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t get your location. Showing results for Delhi.'**
   String get locationTimeout;
+
+  /// No description provided for @sevaSlotFullMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Sorry, this seva slot just filled up.'**
+  String get sevaSlotFullMsg;
+
+  /// No description provided for @sevaSlotEndedMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'This seva slot has already ended.'**
+  String get sevaSlotEndedMsg;
+
+  /// No description provided for @invalidUpi.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid UPI ID, like name@bank'**
+  String get invalidUpi;
+
+  /// No description provided for @invalidUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a full link starting with https://'**
+  String get invalidUrl;
+
+  /// No description provided for @invalidPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'A photo could not be attached. Please pick it again.'**
+  String get invalidPhoto;
 }
 
 class _AppLocalizationsDelegate
