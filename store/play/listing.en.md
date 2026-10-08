@@ -22,7 +22,7 @@ Langar is the Sikh tradition of a free community kitchen open to all, regardless
 
 **Category:** Lifestyle (alt: Social)
 **Tags:** langar, gurudwara, free food, community kitchen, seva, volunteer
-**Contact email:** support@langarseva.app
+**Contact email:** your own Gmail (the langarseva.app domain is not registered, so do not use support@langarseva.app)
 **Privacy policy URL:** https://priyanshuvlogs-collab.github.io/langarseva/privacy
 
 ## Data safety form answers

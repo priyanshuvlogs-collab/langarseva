@@ -31,7 +31,7 @@ Our backend is Supabase (hosted on AWS, Mumbai region). Data is encrypted in tra
 The app is intended for users aged 13 and older. We do not knowingly collect data from children under 13.
 
 ## Contact
-Questions or deletion requests: **support@langarseva.app**
+Questions or deletion requests: write to the developer email shown on the LangarSeva Google Play / App Store page, or open an issue at https://github.com/priyanshuvlogs-collab/langarseva/issues. You can also delete your account yourself in the app under Profile → Delete account.
 
 ## Changes
 We will post any changes to this policy on this page and update the date above.
