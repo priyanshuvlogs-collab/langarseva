@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:langarseva/app/theme.dart';
 import 'package:langarseva/features/langars/data/langar.dart';
 import 'package:langarseva/features/langars/presentation/langar_list_tile.dart';
 import 'package:langarseva/l10n/app_localizations.dart';
@@ -39,5 +40,23 @@ void main() {
     await tester.pumpWidget(wrap(const LangarListTile(langar: langar), locale: const Locale('pa')));
     await tester.pumpAndSettle();
     expect(find.text('ਖੁੱਲ੍ਹਾ'), findsOneWidget);
+  });
+
+  testWidgets('themed FilledButton fits in a ListTile trailing slot and dialog actions', (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      theme: buildTheme(Brightness.light),
+      home: Scaffold(
+        body: ListTile(title: const Text('Guest'), trailing: FilledButton(onPressed: () {}, child: const Text('Login'))),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    showDialog<void>(
+      context: tester.element(find.text('Guest')),
+      builder: (_) => AlertDialog(actions: [TextButton(onPressed: () {}, child: const Text('Cancel')), FilledButton(onPressed: () {}, child: const Text('Delete'))]),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.text('Delete'), findsOneWidget);
   });
 }

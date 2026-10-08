@@ -11,7 +11,10 @@ ThemeData buildTheme(Brightness brightness) {
     appBarTheme: AppBarTheme(centerTitle: false, backgroundColor: scheme.surface, scrolledUnderElevation: 0),
     chipTheme: const ChipThemeData(showCheckmark: false),
     filledButtonTheme: FilledButtonThemeData(
-      style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+      // Height only: an infinite minimum width crashes buttons in rows, list-tile
+      // trailing slots and dialog actions. Lists and stretched columns still
+      // make buttons full width.
+      style: FilledButton.styleFrom(minimumSize: const Size(64, 48)),
     ),
     inputDecorationTheme: const InputDecorationTheme(border: OutlineInputBorder(), isDense: true),
     cardTheme: const CardThemeData(clipBehavior: Clip.antiAlias),
