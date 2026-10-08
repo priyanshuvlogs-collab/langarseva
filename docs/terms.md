@@ -10,4 +10,4 @@ _Last updated: 8 October 2026_
 6. **No warranty.** The app is provided "as is" without warranties of any kind. We are not liable for any loss arising from use of the app.
 7. **Changes.** We may update these terms; continued use means you accept the updated terms.
 
-Contact: support@langarseva.app
+Contact: the developer email shown on the LangarSeva Google Play / App Store page, or open an issue at https://github.com/priyanshuvlogs-collab/langarseva/issues.
