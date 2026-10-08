@@ -5,6 +5,10 @@ on:
     branches: ['**']
   pull_request:
 
+env:
+  SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://pbjfpahqtvearfvcuogj.supabase.co' }}
+  SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || 'sb_publishable_hYY0MyoXrTx_SFyy5x_NFg_lcKdWcXf' }}
+
 concurrency:
   group: android-${{ github.ref }}
   cancel-in-progress: true
@@ -23,6 +27,14 @@ jobs:
       - run: flutter gen-l10n
       - run: flutter analyze --no-fatal-infos
       - run: flutter test --coverage
+
+  live-api:
+    name: Live backend smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Exercise every query the app sends against the live Supabase project
+        run: scripts/live_api_smoke.sh
 
   build-debug:
     name: Debug APK (sideload)
@@ -44,8 +56,8 @@ jobs:
           MAPS_API_KEY: ${{ secrets.MAPS_API_KEY_ANDROID }}
         run: |
           flutter build apk --debug \
-            --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
-            --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }} \
+            --dart-define=SUPABASE_URL=$SUPABASE_URL \
+            --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY \
             --dart-define=GOOGLE_WEB_CLIENT_ID=${{ secrets.GOOGLE_WEB_CLIENT_ID }}
       - uses: actions/upload-artifact@v4
         with:
@@ -84,8 +96,8 @@ jobs:
           MAPS_API_KEY: ${{ secrets.MAPS_API_KEY_ANDROID }}
         run: |
           flutter build appbundle --release \
-            --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
-            --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }} \
+            --dart-define=SUPABASE_URL=$SUPABASE_URL \
+            --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY \
             --dart-define=GOOGLE_WEB_CLIENT_ID=${{ secrets.GOOGLE_WEB_CLIENT_ID }}
       - uses: actions/upload-artifact@v4
         with:
