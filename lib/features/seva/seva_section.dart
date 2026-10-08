@@ -149,7 +149,7 @@ Future<void> showCreateSlotDialog(BuildContext context, WidgetRef ref, String la
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextField(controller: title, decoration: InputDecoration(labelText: l.slotTitle)),
+                TextField(controller: title, decoration: InputDecoration(labelText: l.slotTitle), onChanged: (_) => setState(() {})),
                 const SizedBox(height: 12),
                 ListTile(
                   contentPadding: EdgeInsets.zero,
@@ -183,14 +183,18 @@ Future<void> showCreateSlotDialog(BuildContext context, WidgetRef ref, String la
       },
     ),
   );
+  final titleText = title.text.trim();
+  final capacityValue = int.tryParse(capacity.text) ?? 10;
+  title.dispose();
+  capacity.dispose();
   if (ok != true) return;
   try {
     await ref.read(sevaRepositoryProvider).createSlot(
           langarId: langarId,
-          title: title.text.trim(),
+          title: titleText,
           startsAt: start,
           endsAt: end,
-          capacity: int.tryParse(capacity.text) ?? 10,
+          capacity: capacityValue,
         );
     ref.invalidate(sevaSlotsProvider(langarId));
     if (context.mounted) showSnack(context, l.createdSlot);

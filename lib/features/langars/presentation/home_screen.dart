@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -22,8 +24,13 @@ class LangarFilters {
 final filtersProvider = StateProvider<LangarFilters>((ref) => const LangarFilters());
 
 final nearbyLangarsProvider = FutureProvider<List<Langar>>((ref) async {
-  final loc = ref.watch(locationProvider).valueOrNull;
+  final locAsync = ref.watch(locationProvider);
   final f = ref.watch(filtersProvider);
+  // While the location is still resolving, stay in the loading state instead of
+  // flashing the "no langars" empty state. This future is abandoned when the
+  // location provider updates and this provider rebuilds.
+  if (locAsync.isLoading) return Completer<List<Langar>>().future;
+  final loc = locAsync.valueOrNull;
   if (loc == null) return const [];
   return ref.watch(langarRepositoryProvider).nearby(lat: loc.lat, lng: loc.lng, radiusM: f.radiusM, openNow: f.openNow);
 });
@@ -177,14 +184,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                   ),
                   if (offline) _Banner(text: l.offline, icon: Icons.wifi_off),
-                  if (centre?.isFallback == true && centre?.label == null)
+                  if (centre != null && centre.isFallback && centre.label == null && centre.failure != LocationFailure.none)
                     _Banner(
-                      text: l.locationPermissionDenied,
+                      text: switch (centre.failure) {
+                        LocationFailure.serviceOff => l.locationServiceOff,
+                        LocationFailure.timeout => l.locationTimeout,
+                        _ => l.locationPermissionDenied,
+                      },
                       icon: Icons.location_off_outlined,
-                      action: TextButton(
-                        onPressed: () => ref.read(locationProvider.notifier).openSettings(),
-                        child: Text(l.enableLocation),
-                      ),
+                      action: switch (centre.failure) {
+                        LocationFailure.timeout => TextButton(
+                            onPressed: () => ref.read(locationProvider.notifier).refresh(),
+                            child: Text(l.retry),
+                          ),
+                        LocationFailure.serviceOff => TextButton(
+                            onPressed: () => ref.read(locationProvider.notifier).openLocationSettings(),
+                            child: Text(l.enableLocation),
+                          ),
+                        _ => TextButton(
+                            onPressed: () => ref.read(locationProvider.notifier).openSettings(),
+                            child: Text(l.enableLocation),
+                          ),
+                      },
                     ),
                 ],
               ),

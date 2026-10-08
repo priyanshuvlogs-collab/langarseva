@@ -49,13 +49,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   void _done() {
     if (!mounted) return;
     final next = widget.next;
-    if (next != null && next.isNotEmpty) {
-      context.go(next);
-    } else if (context.canPop()) {
+    if (context.canPop()) {
+      // Login was pushed on top of the page that needed it: just return there.
       context.pop();
-    } else {
-      context.go('/');
+      return;
     }
+    // Arrived via redirect (deep link or cold start): rebuild a stack of Home -> next.
+    context.go('/');
+    if (next != null && next.isNotEmpty && next != '/') context.push(next);
   }
 
   @override

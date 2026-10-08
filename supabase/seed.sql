@@ -34,7 +34,8 @@ where l.name in ('Gurudwara Bangla Sahib','Sri Harmandir Sahib (Golden Temple)')
 insert into public.langar_timings (langar_id, day_of_week, opens_at, closes_at, is_24h)
 select l.id, dow, '06:00', '22:00', false
 from public.langars l, generate_series(0,6) dow
-where l.name not in ('Gurudwara Bangla Sahib','Sri Harmandir Sahib (Golden Temple)','Gurudwara Sri Guru Singh Sabha, Ulsoor')
+where l.submitted_by is null
+  and l.name not in ('Gurudwara Bangla Sahib','Sri Harmandir Sahib (Golden Temple)','Gurudwara Sri Guru Singh Sabha, Ulsoor')
   and not exists (select 1 from public.langar_timings t where t.langar_id = l.id);
 
 insert into public.langar_timings (langar_id, day_of_week, opens_at, closes_at, is_24h)

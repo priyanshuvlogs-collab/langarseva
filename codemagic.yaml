@@ -15,7 +15,7 @@ workflows:
     integrations:
       app_store_connect: langarseva_asc
     environment:
-      flutter: stable
+      flutter: 3.35.5
       xcode: latest
       cocoapods: default
       groups:
@@ -68,7 +68,7 @@ workflows:
     max_build_duration: 60
     instance_type: linux_x2
     environment:
-      flutter: stable
+      flutter: 3.35.5
       java: 17
       groups:
         - langarseva_secrets

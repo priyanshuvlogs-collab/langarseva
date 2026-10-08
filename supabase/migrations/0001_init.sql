@@ -1,5 +1,10 @@
 -- LangarSeva initial schema
-create extension if not exists postgis;
+--
+-- Applied to project pbjfpahqtvearfvcuogj (ap-south-1) on 2026-10-08 in chunks
+-- (0001_types_profiles, 0002_tables, 0003_rls, 0004_delete_policies,
+-- 0005_lock_down_trigger_functions; RPC functions via SQL editor). This file is the
+-- single source of truth for a fresh project.
+create extension if not exists postgis with schema extensions;
 create extension if not exists pgcrypto;
 
 -- ---------- enums ----------
@@ -92,6 +97,10 @@ $$;
 create trigger langars_guard_trg before insert or update on public.langars
   for each row execute function public.langars_guard();
 
+-- Trigger functions must not be callable through the REST RPC endpoint.
+revoke execute on function public.handle_new_user() from public, anon, authenticated;
+revoke execute on function public.langars_guard() from public, anon, authenticated;
+
 -- ---------- timings ----------
 create table public.langar_timings (
   id uuid primary key default gen_random_uuid(),
@@ -145,7 +154,7 @@ create table public.reports (
 -- ---------- views / RPC ----------
 -- Is a langar open right now (IST)?
 create or replace function public.langar_is_open(p_langar_id uuid, p_at timestamptz default now())
-returns boolean language sql stable set search_path = public as $$
+returns boolean language sql stable set search_path = public, extensions as $$
   with ist as (
     select (p_at at time zone 'Asia/Kolkata') as local_ts
   )
@@ -174,7 +183,7 @@ returns table (
   address text, city text, state text, photos text[], contact_phone text,
   donate_upi_id text, donate_url text, distance_m double precision, is_open boolean
 )
-language sql stable set search_path = public as $$
+language sql stable set search_path = public, extensions as $$
   select l.id, l.name, l.description, l.lat, l.lng, l.address, l.city, l.state, l.photos,
          l.contact_phone, l.donate_upi_id, l.donate_url,
          st_distance(l.location, st_setsrid(st_makepoint(p_lng, p_lat), 4326)::geography) as distance_m,
@@ -187,14 +196,9 @@ language sql stable set search_path = public as $$
   limit p_limit;
 $$;
 
--- Account deletion (App Store requirement). Deletes auth user; cascades remove profile data.
-create or replace function public.delete_my_account()
-returns void language plpgsql security definer set search_path = public as $$
-begin
-  if auth.uid() is null then raise exception 'not authenticated'; end if;
-  delete from auth.users where id = auth.uid();
-end;
-$$;
+-- Account deletion (App Store requirement) is handled by the `delete-account`
+-- Edge Function (supabase/functions/delete-account), which calls the Auth admin
+-- API. Related rows cascade from auth.users -> profiles.
 
 -- ---------- RLS ----------
 alter table public.profiles enable row level security;
@@ -251,11 +255,12 @@ create policy "favourites: own" on public.favourites for all to authenticated
 create policy "reports: insert" on public.reports for insert to authenticated with check (user_id = auth.uid());
 create policy "reports: admin read" on public.reports for select to authenticated using (public.is_admin());
 
--- Public count of joined volunteers per slot (no PII)
-create or replace view public.seva_slot_counts with (security_invoker = false) as
-  select slot_id, count(*)::int as joined
-  from public.seva_signups where status = 'joined' group by slot_id;
-grant select on public.seva_slot_counts to anon, authenticated;
+-- Public count of joined volunteers per slot (no PII). Exposed to PostgREST as a
+-- computed column: `select=...,joined` on seva_slots.
+create or replace function public.joined(s public.seva_slots)
+returns int language sql stable security definer set search_path = public as $$
+  select count(*)::int from public.seva_signups where slot_id = s.id and status = 'joined';
+$$;
 
 -- ---------- storage ----------
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)

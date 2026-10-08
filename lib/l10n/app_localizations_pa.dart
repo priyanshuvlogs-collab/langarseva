@@ -448,4 +448,12 @@ class AppLocalizationsPa extends AppLocalizations {
 
   @override
   String get accountDeleted => 'ਤੁਹਾਡਾ ਖਾਤਾ ਮਿਟਾ ਦਿੱਤਾ ਗਿਆ ਹੈ।';
+
+  @override
+  String get locationServiceOff =>
+      'ਲੋਕੇਸ਼ਨ ਸਰਵਿਸ ਬੰਦ ਹੈ। ਦਿੱਲੀ ਦੇ ਨਤੀਜੇ ਦਿਖਾ ਰਹੇ ਹਾਂ।';
+
+  @override
+  String get locationTimeout =>
+      'ਤੁਹਾਡੀ ਲੋਕੇਸ਼ਨ ਨਹੀਂ ਮਿਲ ਸਕੀ। ਦਿੱਲੀ ਦੇ ਨਤੀਜੇ ਦਿਖਾ ਰਹੇ ਹਾਂ।';
 }

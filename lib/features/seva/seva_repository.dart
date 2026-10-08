@@ -8,7 +8,7 @@ class SevaRepository {
   SevaRepository(this._db);
   final SupabaseClient _db;
 
-  static const _cols = 'id,langar_id,title,description,starts_at,ends_at,capacity,seva_slot_counts(joined)';
+  static const _cols = 'id,langar_id,title,description,starts_at,ends_at,capacity,joined';
 
   Future<List<SevaSlot>> upcomingForLangar(String langarId) async {
     final rows = await _db

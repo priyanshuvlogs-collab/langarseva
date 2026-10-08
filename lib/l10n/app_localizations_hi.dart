@@ -447,4 +447,12 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get accountDeleted => 'आपका खाता हटा दिया गया है।';
+
+  @override
+  String get locationServiceOff =>
+      'लोकेशन सर्विस बंद है। दिल्ली के नतीजे दिखा रहे हैं।';
+
+  @override
+  String get locationTimeout =>
+      'आपकी लोकेशन नहीं मिल पाई। दिल्ली के नतीजे दिखा रहे हैं।';
 }

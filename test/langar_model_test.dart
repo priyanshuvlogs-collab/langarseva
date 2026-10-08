@@ -39,7 +39,7 @@ void main() {
       'starts_at': '2026-10-10T03:30:00Z',
       'ends_at': '2026-10-10T06:30:00Z',
       'capacity': 5,
-      'seva_slot_counts': {'joined': 5},
+      'joined': 5,
     });
     expect(s.spotsLeft, 0);
     expect(s.isFull, isTrue);

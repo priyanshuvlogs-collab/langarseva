@@ -909,6 +909,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your account has been deleted.'**
   String get accountDeleted;
+
+  /// No description provided for @locationServiceOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Location services are turned off. Showing results for Delhi.'**
+  String get locationServiceOff;
+
+  /// No description provided for @locationTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t get your location. Showing results for Delhi.'**
+  String get locationTimeout;
 }
 
 class _AppLocalizationsDelegate

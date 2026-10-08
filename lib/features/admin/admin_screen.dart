@@ -30,7 +30,7 @@ class AdminScreen extends ConsumerWidget {
         ),
       );
       if (ok != true) return;
-      reason = ctrl.text.trim();
+      reason = ctrl.text.trim().isEmpty ? null : ctrl.text.trim();
     }
     try {
       await ref.read(langarRepositoryProvider).setStatus(x.id, status, reason: reason);
