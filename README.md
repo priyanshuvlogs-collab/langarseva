@@ -26,8 +26,21 @@ docs/                privacy policy + terms (publish with GitHub Pages)
 
 ## 1. Backend setup (once)
 
+**Live project (already created and seeded):**
+
+| | |
+|---|---|
+| Project | `langarseva` · id `pbjfpahqtvearfvcuogj` · Mumbai (ap-south-1) |
+| URL | `https://pbjfpahqtvearfvcuogj.supabase.co` |
+| Publishable key | `sb_publishable_hYY0MyoXrTx_SFyy5x_NFg_lcKdWcXf` (safe to ship in the app; RLS protects data) |
+| Edge function | `delete-account` (deployed, JWT required) |
+
+Use the URL and key as `SUPABASE_URL` / `SUPABASE_ANON_KEY` dart-defines and GitHub secrets.
+
+For a fresh project instead:
 1. Create a Supabase project (region `ap-south-1`).
 2. SQL editor → run `supabase/migrations/0001_init.sql`, then `supabase/seed.sql`.
+   Deploy the edge function: `supabase functions deploy delete-account`.
 3. **Auth → Providers**: enable **Phone** (choose an SMS provider: MSG91 or Twilio), **Google** and **Apple**.
    - For App Store review add a test OTP: Auth → Phone → "Test phone numbers": `+919999999999 = 123456`.
 4. **Auth → URL configuration**: add redirect URL `com.langarseva.app://login-callback`.

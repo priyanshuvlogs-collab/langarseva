@@ -52,8 +52,13 @@ class AuthController {
 
   Future<void> signOut() => _db.auth.signOut();
 
+  /// Deletes the signed-in user's account via the `delete-account` Edge Function
+  /// (uses the Auth admin API server-side; related rows cascade from auth.users).
   Future<void> deleteAccount() async {
-    await _db.rpc('delete_my_account');
+    final res = await _db.functions.invoke('delete-account');
+    if (res.status != 200) {
+      throw AuthException('Account deletion failed (${res.status})');
+    }
     await _db.auth.signOut();
   }
 

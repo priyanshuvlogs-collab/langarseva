@@ -1,4 +1,9 @@
 -- LangarSeva initial schema
+--
+-- Applied to project pbjfpahqtvearfvcuogj (ap-south-1) on 2026-10-08 in chunks
+-- (0001_types_profiles, 0002_tables, 0003_rls, 0004_delete_policies,
+-- 0005_lock_down_trigger_functions; RPC functions via SQL editor). This file is the
+-- single source of truth for a fresh project.
 create extension if not exists postgis with schema extensions;
 create extension if not exists pgcrypto;
 
@@ -91,6 +96,10 @@ end;
 $$;
 create trigger langars_guard_trg before insert or update on public.langars
   for each row execute function public.langars_guard();
+
+-- Trigger functions must not be callable through the REST RPC endpoint.
+revoke execute on function public.handle_new_user() from public, anon, authenticated;
+revoke execute on function public.langars_guard() from public, anon, authenticated;
 
 -- ---------- timings ----------
 create table public.langar_timings (
@@ -187,14 +196,9 @@ language sql stable set search_path = public, extensions as $$
   limit p_limit;
 $$;
 
--- Account deletion (App Store requirement). Deletes auth user; cascades remove profile data.
-create or replace function public.delete_my_account()
-returns void language plpgsql security definer set search_path = public as $$
-begin
-  if auth.uid() is null then raise exception 'not authenticated'; end if;
-  delete from auth.users where id = auth.uid();
-end;
-$$;
+-- Account deletion (App Store requirement) is handled by the `delete-account`
+-- Edge Function (supabase/functions/delete-account), which calls the Auth admin
+-- API. Related rows cascade from auth.users -> profiles.
 
 -- ---------- RLS ----------
 alter table public.profiles enable row level security;
